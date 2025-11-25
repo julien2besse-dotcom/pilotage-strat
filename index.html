@@ -1,26 +1,31 @@
 <!DOCTYPE html>
 <html lang="fr">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Balanced ScoreCard Dynastar - Axe Processus Internes</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Outfit:wght@400;500;700;800&display=swap"
+        rel="stylesheet">
     <style>
         :root {
-            --primary-color: #ff0000; /* TSM Red */
-            --secondary-color: #cc0000; /* Darker Red */
-            --accent-color: #3b82f6; /* Blue for contrast */
-            --dark-bg: #1a1a1a;
-            --light-bg: #f4f4f5;
-            --card-bg: #ffffff;
-            --text-main: #18181b;
-            --text-muted: #71717a;
-            --success: #10b981;
-            --warning: #f59e0b;
-            --danger: #ef4444;
-            --gradient-main: linear-gradient(135deg, #ff0000 0%, #b91c1c 100%);
-            --shadow-soft: 0 10px 40px -10px rgba(0,0,0,0.08);
-            --shadow-strong: 0 25px 50px -12px rgba(0,0,0,0.15);
+            --primary: #ef4444;
+            --primary-dark: #b91c1c;
+            --primary-glow: rgba(239, 68, 68, 0.5);
+
+            --bg-dark: #09090b;
+            --bg-card: rgba(24, 24, 27, 0.4);
+            --bg-card-hover: rgba(39, 39, 42, 0.6);
+
+            --text-main: #ffffff;
+            --text-muted: #a1a1aa;
+
+            --border-color: rgba(255, 255, 255, 0.1);
+
+            --card-radius: 24px;
         }
 
         * {
@@ -31,980 +36,967 @@
 
         body {
             font-family: 'Inter', sans-serif;
-            background-color: var(--light-bg);
+            background-color: var(--bg-dark);
             color: var(--text-main);
-            line-height: 1.6;
             overflow-x: hidden;
+            min-height: 100vh;
+            perspective: 2000px;
         }
 
-        /* Animated Background */
-        .bg-shape {
+        /* Canvas Background */
+        #bg-canvas {
             position: fixed;
-            border-radius: 50%;
-            filter: blur(80px);
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
             z-index: -1;
+            pointer-events: none;
+        }
+
+        /* Noise Texture Overlay */
+        .noise-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAiIGhlaWdodD0iMjAwIj48ZmlsdGVyIGlkPSJub2lzZSI+PGZlVHVyYnVsZW5jZSB0eXBlPSJmcmFjdGFsTm9pc2UiIGJhc2VGcmVxdWVuY3k9IjAuNjUiIG51bU9jdGF2ZXM9IjMiIHN0aXRjaFRpbGVzPSJzdGl0Y2giLz48L2ZpbHRlcj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWx0ZXI9InVybCgjbm9pc2UpIiBvcGFjaXR5PSIwLjAzIi8+PC9zdmc+');
+            pointer-events: none;
+            z-index: 9999;
             opacity: 0.4;
-            animation: float 20s infinite ease-in-out;
-        }
-        .shape-1 { top: -10%; left: -10%; width: 600px; height: 600px; background: rgba(255, 0, 0, 0.15); }
-        .shape-2 { bottom: -10%; right: -10%; width: 500px; height: 500px; background: rgba(59, 130, 246, 0.15); animation-delay: -5s; }
-        
-        @keyframes float {
-            0%, 100% { transform: translate(0, 0); }
-            50% { transform: translate(30px, 50px); }
         }
 
-        .container {
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 40px 20px;
-        }
-
-        /* Header Styles */
-        header {
-            background: rgba(255, 255, 255, 0.8);
-            backdrop-filter: blur(20px);
-            border-radius: 24px;
-            padding: 40px;
-            margin-bottom: 40px;
-            box-shadow: var(--shadow-soft);
-            border: 1px solid rgba(255,255,255,0.5);
-            position: relative;
+        /* Deep Background Blobs (Behind Canvas) */
+        .ambient-light {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: -2;
             overflow: hidden;
         }
 
-        header::before {
-            content: '';
+        .blob {
             position: absolute;
-            top: 0; left: 0; width: 100%; height: 6px;
-            background: var(--gradient-main);
+            filter: blur(120px);
+            opacity: 0.3;
+            will-change: transform;
+            transition: transform 0.5s cubic-bezier(0.17, 0.67, 0.83, 0.67);
         }
 
-        .header-content {
+        .blob-1 {
+            top: -20%;
+            left: -20%;
+            width: 900px;
+            height: 900px;
+            background: radial-gradient(circle, var(--primary) 0%, transparent 70%);
+        }
+
+        .blob-2 {
+            bottom: -20%;
+            right: -20%;
+            width: 800px;
+            height: 800px;
+            background: radial-gradient(circle, #3b82f6 0%, transparent 70%);
+        }
+
+        /* Layout */
+        .container {
+            max-width: 1200px;
+            /* Slightly tighter container for the 2x2 grid */
+            margin: 0 auto;
+            padding: 40px 20px;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Header */
+        header {
             display: flex;
             justify-content: space-between;
-            align-items: flex-start;
-            gap: 40px;
-        }
-
-        .logo-wrapper {
-            background: var(--primary-color);
-            padding: 20px;
-            border-radius: 16px;
-            display: flex;
             align-items: center;
-            justify-content: center;
-            box-shadow: 0 10px 25px rgba(255, 0, 0, 0.2);
+            margin-bottom: 50px;
+            padding: 40px;
+            background: rgba(255, 255, 255, 0.02);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-radius: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.2);
+            transform-style: preserve-3d;
+            transition: transform 0.1s;
         }
 
-        .tsm-logo {
-            height: 60px;
-            width: auto;
-            /* Using CSS filter to make the white logo visible on red bg if it's the one from the image */
-            filter: brightness(0) invert(1); 
-        }
-        
-        /* Since the uploaded logo is red background with white text, we can just use it directly if we want the square look */
-        .tsm-logo-img {
-            height: 80px;
-            border-radius: 12px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-        }
-
-        .header-text h1 {
+        .header-content h1 {
+            font-family: 'Outfit', sans-serif;
             font-size: 3.5rem;
             font-weight: 800;
-            letter-spacing: -0.03em;
             line-height: 1.1;
-            background: linear-gradient(to right, #18181b, #4b5563);
-            background-clip: text;
+            margin-bottom: 15px;
+            background: linear-gradient(135deg, #fff 0%, #94a3b8 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
-            margin-bottom: 15px;
+            letter-spacing: -0.02em;
         }
 
-        .header-text p {
+        .header-content p {
             font-size: 1.25rem;
             color: var(--text-muted);
             font-weight: 500;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
         }
 
-        .team-badge-container {
+        .team-badges {
             display: flex;
-            gap: 10px;
+            gap: 12px;
             margin-top: 25px;
         }
 
-        .team-member {
-            background: white;
+        .badge {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
             padding: 8px 16px;
             border-radius: 100px;
-            font-weight: 600;
             font-size: 0.9rem;
-            color: var(--text-main);
-            border: 1px solid #e4e4e7;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.03);
-            transition: transform 0.2s ease;
+            font-weight: 600;
+            color: var(--text-muted);
+            transition: all 0.3s ease;
+            cursor: default;
         }
 
-        .team-member:hover {
-            transform: translateY(-2px);
-            border-color: var(--primary-color);
-            color: var(--primary-color);
+        .badge:hover {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+            transform: translateY(-3px) scale(1.05);
+            box-shadow: 0 10px 20px var(--primary-glow);
+        }
+
+        .logo-container img {
+            height: 80px;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            transition: transform 0.3s ease;
+        }
+
+        .logo-container img:hover {
+            transform: scale(1.05) rotate(2deg);
         }
 
         /* Navigation */
-        .nav-container {
-            background: white;
-            padding: 10px;
-            border-radius: 20px;
-            display: inline-flex;
-            gap: 8px;
-            margin-bottom: 40px;
-            box-shadow: var(--shadow-soft);
+        .nav-wrapper {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 50px;
             position: sticky;
-            top: 20px;
+            top: 30px;
             z-index: 100;
         }
 
+        .nav-pills {
+            background: rgba(10, 10, 10, 0.7);
+            backdrop-filter: blur(20px);
+            padding: 6px;
+            border-radius: 100px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            gap: 5px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+        }
+
         .nav-btn {
-            padding: 12px 24px;
-            border-radius: 14px;
-            border: none;
             background: transparent;
-            font-weight: 600;
+            border: none;
             color: var(--text-muted);
+            padding: 14px 35px;
+            border-radius: 100px;
+            font-family: 'Outfit', sans-serif;
+            font-weight: 600;
+            font-size: 1.05rem;
             cursor: pointer;
-            transition: all 0.3s ease;
-            font-size: 1rem;
+            transition: all 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+            position: relative;
+            overflow: hidden;
         }
 
         .nav-btn.active {
-            background: var(--primary-color);
+            background: var(--primary);
             color: white;
-            box-shadow: 0 4px 12px rgba(255, 0, 0, 0.25);
+            box-shadow: 0 0 30px var(--primary-glow);
         }
 
-        .nav-btn:hover:not(.active) {
-            background: #f4f4f5;
-            color: var(--text-main);
-        }
-
-        /* Content Sections */
-        .section {
-            display: none;
-            animation: slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1);
-        }
-
-        .section.active {
-            display: block;
-        }
-
-        @keyframes slideUp {
-            from { opacity: 0; transform: translateY(40px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        /* Objectives Grid */
-        .obj-grid {
+        /* Spotlight Grid - FIXED LAYOUT */
+        .bento-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(600px, 1fr));
+            /* Force 2 columns on desktop to avoid holes */
+            grid-template-columns: repeat(2, 1fr);
             gap: 30px;
-        }
-
-        .obj-card {
-            background: white;
-            border-radius: 24px;
-            overflow: hidden;
-            box-shadow: var(--shadow-soft);
-            border: 1px solid rgba(0,0,0,0.03);
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
-        }
-
-        .obj-card:hover {
-            transform: translateY(-5px);
-            box-shadow: var(--shadow-strong);
-        }
-
-        .obj-header {
-            padding: 30px;
-            background: linear-gradient(to bottom right, #ffffff, #fcfcfc);
-            border-bottom: 1px solid #f4f4f5;
-            display: flex;
-            align-items: center;
-            gap: 20px;
-        }
-
-        .obj-icon {
-            width: 50px;
-            height: 50px;
-            background: #fee2e2;
-            border-radius: 14px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.5rem;
-            color: var(--primary-color);
-        }
-
-        .obj-title h2 {
-            font-size: 1.4rem;
-            font-weight: 700;
-            color: var(--text-main);
-        }
-
-        .obj-body {
-            padding: 30px;
-        }
-
-        .sub-obj {
-            margin-bottom: 25px;
-            padding-left: 20px;
-            border-left: 3px solid #e4e4e7;
-            transition: border-color 0.3s ease;
-        }
-
-        .sub-obj:hover {
-            border-left-color: var(--primary-color);
-        }
-
-        .sub-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 10px;
-        }
-
-        .sub-title {
-            font-weight: 700;
-            font-size: 1.1rem;
-            color: #27272a;
-        }
-
-        .quote-box {
-            background: #f8fafc;
-            padding: 15px 20px;
-            border-radius: 12px;
-            font-style: italic;
-            color: #475569;
-            font-size: 0.95rem;
-            margin: 12px 0;
             position: relative;
         }
 
-        .quote-box::before {
-            content: '"';
-            font-size: 3rem;
-            position: absolute;
-            top: -10px;
-            left: 10px;
-            color: #cbd5e1;
-            opacity: 0.5;
+        /* 3D Tilt Card */
+        .tilt-card {
+            background: var(--bg-card);
+            border-radius: var(--card-radius);
+            position: relative;
+            transition: transform 0.1s ease;
+            transform-style: preserve-3d;
+            height: 100%;
+            padding: 1px;
+            background-clip: content-box;
         }
 
-        .kpi-tag {
+        .tilt-card::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            border-radius: var(--card-radius);
+            padding: 2px;
+            background: radial-gradient(800px circle at var(--mouse-x) var(--mouse-y),
+                    rgba(255, 255, 255, 0.4),
+                    transparent 40%);
+            -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            -webkit-mask-composite: xor;
+            mask-composite: exclude;
+            pointer-events: none;
+            z-index: 2;
+        }
+
+        .card-content {
+            background: rgba(20, 20, 22, 0.95);
+            border-radius: var(--card-radius);
+            padding: 40px;
+            height: 100%;
+            position: relative;
+            z-index: 1;
+            overflow: hidden;
+            background: radial-gradient(800px circle at var(--mouse-x) var(--mouse-y),
+                    rgba(255, 255, 255, 0.06),
+                    transparent 40%);
+        }
+
+        .card-icon {
+            font-size: 3rem;
+            margin-bottom: 25px;
+            width: 80px;
+            height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            transform: translateZ(20px);
+        }
+
+        .tilt-card h2 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 30px;
+            color: white;
+            transform: translateZ(30px);
+        }
+
+        .sub-item {
+            margin-bottom: 30px;
+            padding-left: 20px;
+            border-left: 2px solid rgba(255, 255, 255, 0.1);
+            transition: 0.3s ease;
+            transform: translateZ(10px);
+        }
+
+        .sub-item:hover {
+            border-left-color: var(--primary);
+            background: linear-gradient(90deg, rgba(255, 255, 255, 0.02), transparent);
+        }
+
+        .sub-title {
+            font-size: 1.15rem;
+            font-weight: 600;
+            color: #e4e4e7;
+            margin-bottom: 10px;
+        }
+
+        .quote {
+            font-size: 0.95rem;
+            color: var(--text-muted);
+            font-style: italic;
+            margin-bottom: 15px;
+            line-height: 1.6;
+        }
+
+        .kpi-badge {
             display: inline-flex;
             align-items: center;
-            background: #eff6ff;
-            color: #2563eb;
-            padding: 8px 16px;
+            background: rgba(59, 130, 246, 0.1);
+            color: #60a5fa;
+            padding: 8px 14px;
             border-radius: 10px;
+            font-size: 0.85rem;
             font-weight: 600;
-            font-size: 0.9rem;
-            margin-top: 10px;
-            border: 1px solid #dbeafe;
+            border: 1px solid rgba(59, 130, 246, 0.2);
+            transition: 0.3s;
         }
 
-        .kpi-tag span {
-            background: #2563eb;
+        .kpi-badge:hover {
+            background: rgba(59, 130, 246, 0.2);
+            box-shadow: 0 0 15px rgba(59, 130, 246, 0.3);
+        }
+
+        .kpi-badge span {
+            background: #3b82f6;
             color: white;
             padding: 2px 8px;
             border-radius: 6px;
             margin-left: 10px;
-            font-size: 0.8rem;
+            font-size: 0.75rem;
         }
 
-        /* Fiche Technique Style */
-        .fiche-wrapper {
-            background: white;
-            border-radius: 30px;
-            box-shadow: var(--shadow-strong);
+        /* Tech Sheet */
+        .tech-sheet {
+            background: rgba(20, 20, 22, 0.8);
+            backdrop-filter: blur(30px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 40px;
             overflow: hidden;
-            max-width: 1100px;
+            max-width: 1000px;
             margin: 0 auto;
-            border: 1px solid rgba(0,0,0,0.05);
+            box-shadow: 0 50px 100px -20px rgba(0, 0, 0, 0.5);
+            animation: slideUp 0.8s cubic-bezier(0.16, 1, 0.3, 1);
         }
 
-        .fiche-top {
-            background: var(--gradient-main);
-            padding: 60px 40px;
-            color: white;
+        .tech-header {
+            background: linear-gradient(135deg, var(--primary-dark), var(--primary));
+            padding: 80px 40px;
             text-align: center;
             position: relative;
+            overflow: hidden;
         }
-        
-        .fiche-top::after {
+
+        .tech-header::before {
             content: '';
             position: absolute;
-            bottom: -1px;
+            top: 0;
             left: 0;
             width: 100%;
-            height: 40px;
-            background: white;
-            clip-path: polygon(0 100%, 100% 100%, 100% 0);
+            height: 100%;
+            background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
         }
 
-        .fiche-top h2 {
-            font-size: 2.5rem;
+        .tech-header h2 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 3rem;
             font-weight: 800;
-            margin-bottom: 10px;
+            color: white;
+            margin-bottom: 15px;
+            position: relative;
+            text-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
         }
 
-        .fiche-top p {
-            font-size: 1.1rem;
-            opacity: 0.9;
+        .tech-header p {
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 1.2rem;
             font-weight: 500;
+            position: relative;
         }
 
-        .fiche-content {
-            padding: 40px 60px;
+        .tech-body {
+            padding: 50px;
         }
 
         .data-grid {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
-            gap: 30px;
-            margin-bottom: 40px;
+            gap: 25px;
         }
 
-        .data-item {
-            background: #f9fafb;
-            padding: 20px 25px;
-            border-radius: 16px;
-            transition: all 0.3s ease;
+        .data-row {
+            background: rgba(255, 255, 255, 0.02);
+            padding: 25px;
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            transition: 0.3s ease;
         }
 
-        .data-item:hover {
-            background: #fff;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
-            transform: translateY(-3px);
+        .data-row:hover {
+            background: rgba(255, 255, 255, 0.05);
+            transform: translateX(10px);
+            border-color: rgba(255, 255, 255, 0.1);
         }
 
-        .data-label {
+        .label {
+            font-size: 0.8rem;
             text-transform: uppercase;
-            font-size: 0.75rem;
-            font-weight: 700;
-            letter-spacing: 1px;
+            letter-spacing: 1.5px;
             color: var(--text-muted);
             margin-bottom: 8px;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-        
-        .data-label::before {
-            content: '';
-            width: 6px;
-            height: 6px;
-            background: var(--primary-color);
-            border-radius: 50%;
-        }
-
-        .data-value {
-            font-size: 1.1rem;
-            font-weight: 600;
-            color: var(--text-main);
-            line-height: 1.5;
-        }
-
-        .highlight {
-            color: var(--primary-color);
-            font-weight: 800;
-        }
-
-        .formula-container {
-            background: #18181b;
-            padding: 30px;
-            border-radius: 20px;
-            margin: 40px 0;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .formula-label {
-            color: #a1a1aa;
-            font-size: 0.85rem;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-bottom: 15px;
-            font-weight: 600;
-        }
-
-        .formula-math {
-            color: white;
-            font-family: 'Courier New', monospace;
-            font-size: 1.2rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 20px;
-        }
-        
-        .fraction {
-            display: inline-flex;
-            flex-direction: column;
-            align-items: center;
-            text-align: center;
-        }
-        
-        .numerator {
-            border-bottom: 2px solid #52525b;
-            padding-bottom: 5px;
-            margin-bottom: 5px;
-        }
-
-        .action-box {
-            background: linear-gradient(135deg, #fefce8, #fef9c3);
-            border: 2px solid #fde047;
-            padding: 25px 30px;
-            border-radius: 16px;
-            color: #854d0e;
-        }
-
-        .action-title {
-            font-weight: 800;
-            font-size: 1.1rem;
-            margin-bottom: 10px;
             display: flex;
             align-items: center;
             gap: 10px;
         }
 
+        .label::before {
+            content: '';
+            width: 8px;
+            height: 8px;
+            background: var(--primary);
+            border-radius: 50%;
+            box-shadow: 0 0 10px var(--primary);
+        }
+
+        .value {
+            font-size: 1.2rem;
+            font-weight: 500;
+            color: white;
+        }
+
+        .value.highlight {
+            color: var(--primary);
+            font-weight: 800;
+            font-size: 1.5rem;
+            text-shadow: 0 0 20px var(--primary-glow);
+        }
+
+        .formula-box {
+            background: #000;
+            border: 1px solid #333;
+            border-radius: 24px;
+            padding: 40px;
+            margin: 50px 0;
+            text-align: center;
+            position: relative;
+            box-shadow: inset 0 0 50px rgba(255, 255, 255, 0.05);
+        }
+
+        .math-display {
+            font-family: 'Courier New', monospace;
+            font-size: 1.4rem;
+            color: #e4e4e7;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+        }
+
+        .fraction {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .num {
+            border-bottom: 2px solid #666;
+            padding-bottom: 8px;
+            margin-bottom: 8px;
+        }
+
+        .alert-box {
+            background: linear-gradient(135deg, rgba(234, 179, 8, 0.05), rgba(234, 179, 8, 0.1));
+            border: 1px solid rgba(234, 179, 8, 0.3);
+            padding: 30px;
+            border-radius: 20px;
+            color: #fde047;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .alert-box::before {
+            content: '⚠️';
+            position: absolute;
+            right: -20px;
+            bottom: -20px;
+            font-size: 8rem;
+            opacity: 0.1;
+            transform: rotate(-20deg);
+        }
+
         /* Footer */
         footer {
             text-align: center;
-            padding: 60px 20px;
-            margin-top: 60px;
-            border-top: 1px solid #e4e4e7;
+            padding: 80px 0;
+            margin-top: 80px;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+            color: var(--text-muted);
         }
-        
+
         .footer-logo {
-            height: 50px;
+            height: 40px;
+            opacity: 0.6;
             margin-bottom: 20px;
-            filter: grayscale(100%);
-            opacity: 0.5;
-            transition: all 0.3s ease;
+            filter: grayscale(100%) brightness(2);
+            transition: 0.3s;
         }
-        
+
         .footer-logo:hover {
-            filter: grayscale(0%);
             opacity: 1;
+            filter: none;
+        }
+
+        /* Utilities */
+        .hidden {
+            display: none;
+        }
+
+        .reveal-text {
+            opacity: 0;
+            transform: translateY(20px);
+            animation: fadeInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        @keyframes fadeInUp {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
         @media (max-width: 1024px) {
-            .header-content { flex-direction: column; }
-            .obj-grid { grid-template-columns: 1fr; }
+
+            /* Keep 2 columns on tablet if possible, or switch to 1 if too narrow */
+            .bento-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
         }
 
         @media (max-width: 768px) {
-            .container { padding: 20px 15px; }
-
             header {
-                padding: 30px 20px;
-                margin-bottom: 30px;
-            }
-
-            .header-text h1 {
-                font-size: 2rem;
-                line-height: 1.2;
-            }
-
-            .header-text p {
-                font-size: 1rem;
-            }
-
-            .tsm-logo-img {
-                height: 60px;
-            }
-
-            .team-badge-container {
-                flex-wrap: wrap;
-                gap: 8px;
-            }
-
-            .team-member {
-                font-size: 0.85rem;
-                padding: 6px 12px;
-            }
-
-            .nav-container {
-                width: 100%;
-                padding: 8px;
-                top: 10px;
-            }
-
-            .nav-btn {
-                padding: 10px 16px;
-                font-size: 0.9rem;
-                flex: 1;
-            }
-
-            .obj-grid {
-                grid-template-columns: 1fr;
+                flex-direction: column;
+                text-align: center;
                 gap: 20px;
+                padding: 30px;
             }
 
-            .obj-card {
-                border-radius: 16px;
+            .header-content h1 {
+                font-size: 2.2rem;
             }
 
-            .obj-header {
-                padding: 20px;
-                gap: 15px;
-            }
-
-            .obj-icon {
-                width: 40px;
-                height: 40px;
-                font-size: 1.2rem;
-            }
-
-            .obj-title h2 {
-                font-size: 1.1rem;
-            }
-
-            .obj-body {
-                padding: 20px;
-            }
-
-            .sub-obj {
-                margin-bottom: 20px;
-                padding-left: 15px;
-            }
-
-            .sub-title {
-                font-size: 1rem;
-            }
-
-            .quote-box {
-                padding: 12px 15px;
-                font-size: 0.9rem;
-            }
-
-            .kpi-tag {
-                font-size: 0.85rem;
-                padding: 6px 12px;
+            .team-badges {
+                justify-content: center;
                 flex-wrap: wrap;
-            }
-
-            .kpi-tag span {
-                margin-left: 8px;
-                font-size: 0.75rem;
-            }
-
-            .fiche-wrapper {
-                border-radius: 20px;
-            }
-
-            .fiche-top {
-                padding: 40px 20px;
-            }
-
-            .fiche-top h2 {
-                font-size: 1.8rem;
-            }
-
-            .fiche-top p {
-                font-size: 1rem;
-            }
-
-            .fiche-content {
-                padding: 20px 15px;
             }
 
             .data-grid {
                 grid-template-columns: 1fr;
-                gap: 15px;
             }
 
-            .data-item {
-                padding: 15px 18px;
-            }
-
-            .data-label {
-                font-size: 0.7rem;
-            }
-
-            .data-value {
+            .math-display {
                 font-size: 1rem;
-            }
-
-            .formula-container {
-                padding: 20px 15px;
-                margin: 30px 0;
-            }
-
-            .formula-label {
-                font-size: 0.8rem;
-            }
-
-            .formula-math {
-                font-size: 0.85rem;
                 flex-direction: column;
-                gap: 10px;
             }
 
-            .action-box {
-                padding: 20px;
-            }
-
-            .action-title {
-                font-size: 1rem;
-            }
-
-            footer {
-                padding: 40px 20px;
-                margin-top: 40px;
-            }
-
-            .footer-logo {
-                height: 40px;
+            /* Stack on mobile */
+            .bento-grid {
+                grid-template-columns: 1fr;
             }
         }
     </style>
 </head>
+
 <body>
 
-    <div class="bg-shape shape-1"></div>
-    <div class="bg-shape shape-2"></div>
+    <div class="noise-overlay"></div>
+    <canvas id="bg-canvas"></canvas>
+
+    <div class="ambient-light">
+        <div class="blob blob-1"></div>
+        <div class="blob blob-2"></div>
+    </div>
 
     <div class="container">
-        <header>
+
+        <header id="main-header">
             <div class="header-content">
-                <div class="header-text">
-                    <h1>Le Balanced ScoreCard<br>de Dynastar</h1>
-                    <p>Axe Stratégique 3 : Processus Internes</p>
-                    <div class="team-badge-container">
-                        <div class="team-member">👤 Konrad</div>
-                        <div class="team-member">👤 Shayna</div>
-                        <div class="team-member">👤 Davide</div>
-                        <div class="team-member">👤 Julien</div>
-                    </div>
+                <h1 class="reveal-text" style="animation-delay: 0.1s;">Balanced ScoreCard<br>Dynastar</h1>
+                <p class="reveal-text" style="animation-delay: 0.2s;">Axe Stratégique 3 : Processus Internes</p>
+                <div class="team-badges reveal-text" style="animation-delay: 0.3s;">
+                    <span class="badge">Konrad</span>
+                    <span class="badge">Shayna</span>
+                    <span class="badge">Davide</span>
+                    <span class="badge">Julien</span>
                 </div>
-                <img src="https://tsm-education.fr/sites/default/files/2023-03/TSM_Logo_Education.png" alt="TSM Logo" class="tsm-logo-img">
+            </div>
+            <div class="logo-container reveal-text" style="animation-delay: 0.4s;">
+                <img src="https://tsm-education.fr/sites/default/files/2023-03/TSM_Logo_Education.png" alt="TSM Logo">
             </div>
         </header>
 
-        <div style="text-align: center;">
-            <nav class="nav-container">
-                <button class="nav-btn active" onclick="switchTab('kpi')">🎯 Objectifs & KPI</button>
-                <button class="nav-btn" onclick="switchTab('fiche')">📋 Fiche Technique</button>
-            </nav>
+        <div class="nav-wrapper reveal-text" style="animation-delay: 0.5s;">
+            <div class="nav-pills">
+                <button class="nav-btn active" onclick="showSection('kpi')">Objectifs & KPI</button>
+                <button class="nav-btn" onclick="showSection('fiche')">Fiche Technique</button>
+            </div>
         </div>
 
-        <div id="kpi" class="section active">
-            <div class="obj-grid">
+        <main>
+            <!-- KPI SECTION -->
+            <section id="kpi" class="reveal-text" style="animation-delay: 0.6s;">
+                <div class="bento-grid" id="cards-container">
 
-                <div class="obj-card">
-                    <div class="obj-header">
-                        <div class="obj-icon">🏭</div>
-                        <div class="obj-title">
+                    <!-- Card 1 -->
+                    <div class="tilt-card">
+                        <div class="card-content">
+                            <div class="card-icon">🏭</div>
                             <h2>Améliorer les processus industriels</h2>
-                        </div>
-                    </div>
-                    <div class="obj-body">
-                        <div class="sub-obj">
-                            <div class="sub-header">
-                                <div class="sub-title">Fiabiliser la planification de la production (OTD Interne)</div>
-                            </div>
-                            <div class="quote-box">
-                                "Pour éviter de produire des stocks inutiles ou d'être en rupture, et respecter les dates de mise à disposition."
-                            </div>
-                            <div class="kpi-tag">
-                                % skis alpins fabriqués "On Time" <span>KPI #22</span>
-                            </div>
-                        </div>
 
-                        <div class="sub-obj">
-                            <div class="sub-header">
-                                <div class="sub-title">Réduire les coûts de non-qualité (Rebuts)</div>
+                            <div class="sub-item">
+                                <div class="sub-title">Fiabiliser la planification (OTD Interne)</div>
+                                <div class="quote">"Éviter les stocks inutiles et respecter les mises à disposition."
+                                </div>
+                                <div class="kpi-badge">% skis alpins fabriqués "On Time" <span>KPI #22</span></div>
                             </div>
-                            <div class="quote-box">
-                                "Pour réduire les coûts de production directs et éviter le gaspillage de matières coûteuses."
-                            </div>
-                            <div class="kpi-tag">
-                                Taux skis rebutés sortie moulage <span>KPI #76</span>
-                            </div>
-                        </div>
 
-                        <div class="sub-obj">
-                            <div class="sub-header">
-                                <div class="sub-title">Optimiser l'utilisation des ressources humaines</div>
+                            <div class="sub-item">
+                                <div class="sub-title">Réduire les coûts de non-qualité</div>
+                                <div class="quote">"Réduire les coûts directs et le gaspillage de matières."</div>
+                                <div class="kpi-badge">Taux skis rebutés sortie moulage <span>KPI #76</span></div>
                             </div>
-                            <div class="quote-box">
-                                "Le mauvais ordonnancement laisse des opérateurs inoccupés à certains moments et oblige à prendre des intérimaires à d'autres, ce qui coûte cher."
-                            </div>
-                            <div class="kpi-tag">
-                                Taux de rendement main-d'œuvre <span>Nouveau KPI</span>
+
+                            <div class="sub-item">
+                                <div class="sub-title">Optimiser les ressources humaines</div>
+                                <div class="quote">"Éviter les opérateurs inoccupés et l'intérim coûteux."</div>
+                                <div class="kpi-badge">Taux de rendement main-d'œuvre <span>Nouveau</span></div>
                             </div>
                         </div>
                     </div>
-                </div>
 
-                <div class="obj-card">
-                    <div class="obj-header">
-                        <div class="obj-icon">📦</div>
-                        <div class="obj-title">
+                    <!-- Card 2 -->
+                    <div class="tilt-card">
+                        <div class="card-content">
+                            <div class="card-icon">📦</div>
                             <h2>Améliorer les processus logistiques</h2>
-                        </div>
-                    </div>
-                    <div class="obj-body">
-                        <div class="sub-obj">
-                            <div class="sub-header">
+
+                            <div class="sub-item">
                                 <div class="sub-title">Rationaliser les flux d'expédition</div>
+                                <div class="quote">"Passer de 6-7 livraisons à 2 maximum par commande."</div>
+                                <div class="kpi-badge">% livraisons en 1 ou 2 fois <span>KPI #10</span></div>
                             </div>
-                            <div class="quote-box">
-                                "Actuellement, 6 à 7 livraisons sont faites pour une commande, l'objectif est de passer à 2 maximum pour réduire les coûts de transport."
-                            </div>
-                            <div class="kpi-tag">
-                                % livraisons en 1 ou 2 fois <span>KPI #10</span>
-                            </div>
-                        </div>
 
-                        <div class="sub-obj">
-                            <div class="sub-header">
-                                <div class="sub-title">Garantir la conformité des préparations</div>
+                            <div class="sub-item">
+                                <div class="sub-title">Garantir la conformité</div>
+                                <div class="quote">"Réduire les erreurs générant retours et avoirs."</div>
+                                <div class="kpi-badge">% livraisons conformes <span>KPI #7</span></div>
                             </div>
-                            <div class="quote-box">
-                                "Il y a de nombreuses erreurs entre la commande et la livraison, ce qui génère des retours et des avoirs."
-                            </div>
-                            <div class="kpi-tag">
-                                % livraisons conformes <span>KPI #7</span>
-                            </div>
-                        </div>
 
-                        <div class="sub-obj">
-                            <div class="sub-header">
-                                <div class="sub-title">Optimiser la rotation des stocks produits finis</div>
-                            </div>
-                            <div class="quote-box">
-                                "Le BFR est trop élevé et les stocks résiduels en fin de saison coûtent cher en dépréciation."
-                            </div>
-                            <div class="kpi-tag">
-                                Taux rotation stocks PF <span>Nouveau KPI</span>
+                            <div class="sub-item">
+                                <div class="sub-title">Optimiser la rotation des stocks</div>
+                                <div class="quote">"Réduire le BFR et les stocks résiduels."</div>
+                                <div class="kpi-badge">Taux rotation stocks PF <span>Nouveau</span></div>
                             </div>
                         </div>
                     </div>
-                </div>
 
-                <div class="obj-card">
-                    <div class="obj-header">
-                        <div class="obj-icon">🚀</div>
-                        <div class="obj-title">
-                            <h2>Améliorer les processus de conception</h2>
-                        </div>
-                    </div>
-                    <div class="obj-body">
-                        <div class="sub-obj">
-                            <div class="sub-header">
+                    <!-- Card 3 -->
+                    <div class="tilt-card">
+                        <div class="card-content">
+                            <div class="card-icon">🚀</div>
+                            <h2>Améliorer la conception</h2>
+
+                            <div class="sub-item">
                                 <div class="sub-title">Respecter le Time-to-Market</div>
+                                <div class="quote">"La saisonnalité ne pardonne pas les retards."</div>
+                                <div class="kpi-badge">% projets R&D dans délai <span>KPI #15</span></div>
                             </div>
-                            <div class="quote-box">
-                                "Le respect du planning est difficile actuellement, or la saisonnalité ne pardonne pas."
-                            </div>
-                            <div class="kpi-tag">
-                                % projets R&D dans délai <span>KPI #15</span>
-                            </div>
-                        </div>
 
-                        <div class="sub-obj">
-                            <div class="sub-header">
+                            <div class="sub-item">
                                 <div class="sub-title">Rationaliser la gamme technique</div>
+                                <div class="quote">"Réduire le nombre de structures pour allonger les séries."</div>
+                                <div class="kpi-badge">Nombre structures skis actives <span>KPI #57</span></div>
                             </div>
-                            <div class="quote-box">
-                                "Réduire le nombre de structures (actuellement 50) pour allonger les séries de fabrication et réduire les coûts."
-                            </div>
-                            <div class="kpi-tag">
-                                Nombre structures skis actives <span>KPI #57</span>
-                            </div>
-                        </div>
 
-                        <div class="sub-obj">
-                            <div class="sub-header">
-                                <div class="sub-title">Sécuriser l'aboutissement des projets</div>
-                            </div>
-                            <div class="quote-box">
-                                "Trop de projets n'aboutissent pas sans qu'on comprenne pourquoi, gaspillant des ressources R&D."
-                            </div>
-                            <div class="kpi-tag">
-                                % projets R&D aboutissant <span>KPI #14</span>
+                            <div class="sub-item">
+                                <div class="sub-title">Sécuriser l'aboutissement</div>
+                                <div class="quote">"Éviter le gaspillage de ressources R&D sur des projets avortés."
+                                </div>
+                                <div class="kpi-badge">% projets R&D aboutissant <span>KPI #14</span></div>
                             </div>
                         </div>
                     </div>
-                </div>
 
-                <div class="obj-card">
-                    <div class="obj-header">
-                        <div class="obj-icon">💻</div>
-                        <div class="obj-title">
-                            <h2>Optimiser l'utilisation des SI</h2>
-                        </div>
-                    </div>
-                    <div class="obj-body">
-                        <div class="sub-obj">
-                            <div class="sub-header">
-                                <div class="sub-title">Maîtriser le déploiement du nouvel ERP</div>
-                            </div>
-                            <div class="quote-box">
-                                "C'est un projet critique groupe, il faut respecter le planning de mise en œuvre."
-                            </div>
-                            <div class="kpi-tag">
-                                Jours retard implémentation SI <span>KPI #44</span>
-                            </div>
-                        </div>
+                    <!-- Card 4 -->
+                    <div class="tilt-card">
+                        <div class="card-content">
+                            <div class="card-icon">💻</div>
+                            <h2>Optimiser les SI</h2>
 
-                        <div class="sub-obj">
-                            <div class="sub-header">
+                            <div class="sub-item">
+                                <div class="sub-title">Déploiement nouvel ERP</div>
+                                <div class="quote">"Projet critique groupe, respect impératif du planning."</div>
+                                <div class="kpi-badge">Jours retard implémentation SI <span>KPI #44</span></div>
+                            </div>
+
+                            <div class="sub-item">
                                 <div class="sub-title">Limiter la dette technique</div>
+                                <div class="quote">"Garder un système standard et maintenable."</div>
+                                <div class="kpi-badge">Jours/homme dev. spécifiques <span>KPI #45</span></div>
                             </div>
-                            <div class="quote-box">
-                                "La consigne est de limiter au maximum les développements spécifiques pour garder un système standard et maintenable."
+
+                            <div class="sub-item">
+                                <div class="sub-title">Information financière</div>
+                                <div class="quote">"Reporting rapide et fiable nécessaire pour la consolidation."</div>
+                                <div class="kpi-badge">Délai clôture mensuelle <span>Nouveau</span></div>
                             </div>
-                            <div class="kpi-tag">
-                                Jours/homme dev. spécifiques <span>KPI #45</span>
+                        </div>
+                    </div>
+
+                </div>
+            </section>
+
+            <!-- FICHE TECHNIQUE SECTION -->
+            <section id="fiche" class="hidden">
+                <div class="tech-sheet">
+                    <div class="tech-header">
+                        <h2>% Livraisons en 1 ou 2 fois</h2>
+                        <p>Indicateur Stratégique #10 • Processus Internes</p>
+                    </div>
+
+                    <div class="tech-body">
+                        <div class="data-grid">
+                            <div class="data-row">
+                                <div class="label">Objectif Stratégique</div>
+                                <div class="value">Améliorer les processus logistiques</div>
+                            </div>
+                            <div class="data-row">
+                                <div class="label">Sous-Objectif</div>
+                                <div class="value">Réduire le fractionnement des expéditions</div>
+                            </div>
+                            <div class="data-row">
+                                <div class="label">Cible (Target)</div>
+                                <div class="value highlight">&gt; 95%</div>
+                            </div>
+                            <div class="data-row">
+                                <div class="label">Format Reporting</div>
+                                <div class="value">Histogramme N vs N-1</div>
+                            </div>
+                            <div class="data-row">
+                                <div class="label">Propriétaire</div>
+                                <div class="value">Pascal (Resp. Logistique)</div>
+                            </div>
+                            <div class="data-row">
+                                <div class="label">Fréquence</div>
+                                <div class="value">Mensuelle (Codir)</div>
+                            </div>
+                            <div class="data-row">
+                                <div class="label">Statut</div>
+                                <div class="value highlight" style="color: #ef4444;">Critique</div>
+                            </div>
+                            <div class="data-row">
+                                <div class="label">Admin Données</div>
+                                <div class="value">Yves (DAF & SI)</div>
                             </div>
                         </div>
 
-                        <div class="sub-obj">
-                            <div class="sub-header">
-                                <div class="sub-title">Accélérer la production de l'information financière</div>
+                        <div class="formula-box">
+                            <div class="math-display">
+                                <div class="fraction">
+                                    <span class="num">Commandes soldées avec ≤ 2 BL</span>
+                                    <span>Total commandes soldées</span>
+                                </div>
+                                <span>× 100</span>
                             </div>
-                            <div class="quote-box">
-                                "Marc exige un reporting rapide et fiable car la consolidation est actuellement très difficile entre les filiales."
-                            </div>
-                            <div class="kpi-tag">
-                                Délai clôture mensuelle <span>Nouveau KPI</span>
-                            </div>
+                        </div>
+
+                        <div class="alert-box">
+                            <div class="alert-title" style="font-weight: 700; margin-bottom: 10px;">⚡ Hypothèses &
+                                Remarques</div>
+                            <p><strong>Contexte :</strong> Standard actuel mauvais (6-7 livraisons/commande). Objectif :
+                                max 2.</p>
+                            <br>
+                            <p><strong>Règle de gestion :</strong> Exclure les commandes avec demande explicite de
+                                livraison différée par le client. Seuls les fractionnements subis (rupture, erreur)
+                                comptent.</p>
                         </div>
                     </div>
                 </div>
+            </section>
 
-            </div>
-        </div>
-
-        <div id="fiche" class="section">
-            <div class="fiche-wrapper">
-                <div class="fiche-top">
-                    <h2>% Livraisons en 1 ou 2 fois</h2>
-                    <p>Indicateur Stratégique #10 • Processus Internes</p>
-                </div>
-
-                <div class="fiche-content">
-                    <div class="data-grid">
-                        <div class="data-item">
-                            <div class="data-label">Objectif Stratégique</div>
-                            <div class="data-value">Améliorer les processus logistiques</div>
-                        </div>
-                        <div class="data-item">
-                            <div class="data-label">Sous-Objectif</div>
-                            <div class="data-value">Réduire le fractionnement des expéditions (Optimisation transport)</div>
-                        </div>
-                        <div class="data-item">
-                            <div class="data-label">Cible (Target)</div>
-                            <div class="data-value highlight">&gt; 95%</div>
-                        </div>
-                        <div class="data-item">
-                            <div class="data-label">Format Reporting</div>
-                            <div class="data-value">Graphique en bâtons (Histogramme) N vs N-1</div>
-                        </div>
-                        <div class="data-item">
-                            <div class="data-label">Propriétaire</div>
-                            <div class="data-value">Pascal (Responsable Logistique)</div>
-                        </div>
-                        <div class="data-item">
-                            <div class="data-label">Niveau Reporting</div>
-                            <div class="data-value">Comité de Direction (Codir) mensuel</div>
-                        </div>
-                        <div class="data-item">
-                            <div class="data-label">Processus de Revue</div>
-                            <div class="data-value">Analyse des causes racines pour chaque commande livrée en 3 fois ou plus</div>
-                        </div>
-                        <div class="data-item">
-                            <div class="data-label">Statut</div>
-                            <div class="data-value highlight">Critique</div>
-                        </div>
-                        <div class="data-item">
-                            <div class="data-label">Admin Données</div>
-                            <div class="data-value">Yves (Directeur Financier & SI) via service informatique</div>
-                        </div>
-                        <div class="data-item">
-                            <div class="data-label">Responsables Commentaire</div>
-                            <div class="data-value">Pascal (Logistique) explique la performance ; Nicolas (Commercial) commente l'impact client</div>
-                        </div>
-                        <div class="data-item">
-                            <div class="data-label">Données Sources</div>
-                            <div class="data-value">Système HCL (Hypothèses, Commandes, Livraisons) et bons de transport</div>
-                        </div>
-                        <div class="data-item">
-                            <div class="data-label">Disponibilité Info</div>
-                            <div class="data-value">Mensuelle (Fin de mois)</div>
-                        </div>
-                        <div class="data-item">
-                            <div class="data-label">Fréquence Reporting</div>
-                            <div class="data-value">Mensuelle</div>
-                        </div>
-                        <div class="data-item">
-                            <div class="data-label">Date Création</div>
-                            <div class="data-value">21/11/2025</div>
-                        </div>
-                        <div class="data-item">
-                            <div class="data-label">Date Actualisation</div>
-                            <div class="data-value">31/03/2026 (Fin exercice fiscal)</div>
-                        </div>
-                    </div>
-
-                    <div class="formula-container">
-                        <div class="formula-label">Formule de Calcul</div>
-                        <div class="formula-math">
-                            <div class="fraction">
-                                <span class="numerator">Nombre de commandes soldées ayant généré ≤ 2 BL</span>
-                                <span class="denominator">Nombre total de commandes soldées sur la période</span>
-                            </div>
-                            <span>× 100</span>
-                        </div>
-                    </div>
-
-                    <div class="action-box">
-                        <div class="action-title">⚡ Hypothèses & Remarques</div>
-                        <p><strong>Contexte critique :</strong> Le standard actuel est mauvais (6 à 7 livraisons par commande). Marc indique : "Une commande ne devrait pas être livrée en plus de deux fois".</p>
-                        <p style="margin-top: 15px;"><strong>Important :</strong> Exclure du calcul les commandes où le client a explicitement demandé des dates de livraison différées (reliquats acceptés). Il faut distinguer les fractionnements subis (ruptures stock usine, erreurs prépa) des demandes clients légitimes.</p>
-                        <p style="margin-top: 15px;"><strong>Impact :</strong> Source majeure de surcoûts transport et de plaintes clients.</p>
-                    </div>
-                </div>
-            </div>
-        </div>
+        </main>
 
         <footer>
-            <img src="https://tsm-education.fr/sites/default/files/2023-03/TSM_Logo_Education.png" alt="TSM Logo Footer" class="footer-logo">
-            <p style="color: #a1a1aa; font-size: 0.9rem;">© 2025 TSM - Toulouse School of Management • Cas Pédagogique Dynastar</p>
+            <img src="https://tsm-education.fr/sites/default/files/2023-03/TSM_Logo_Education.png" alt="TSM Footer"
+                class="footer-logo">
+            <p>© 2025 TSM - Toulouse School of Management • Dynastar Case Study</p>
         </footer>
 
     </div>
 
     <script>
-        function switchTab(tabId) {
-            // Hide all sections
-            document.querySelectorAll('.section').forEach(el => el.classList.remove('active'));
-            // Show target section
-            document.getElementById(tabId).classList.add('active');
-            
-            // Update nav buttons
-            document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('active'));
+        // --- 1. Navigation Logic ---
+        function showSection(id) {
+            document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
             event.target.classList.add('active');
-            
-            // Scroll to top smoothly
+
+            const sections = ['kpi', 'fiche'];
+            sections.forEach(sec => {
+                const el = document.getElementById(sec);
+                if (sec === id) {
+                    el.classList.remove('hidden');
+                    el.style.animation = 'none';
+                    el.offsetHeight; /* trigger reflow */
+                    el.style.animation = 'fadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards';
+                } else {
+                    el.classList.add('hidden');
+                }
+            });
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
+
+        // --- 2. Spotlight & Tilt Effect ---
+        const cardsContainer = document.getElementById('cards-container');
+        const cards = document.querySelectorAll('.tilt-card');
+
+        cardsContainer.addEventListener('mousemove', e => {
+            for (const card of cards) {
+                const rect = card.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+
+                card.style.setProperty('--mouse-x', `${x}px`);
+                card.style.setProperty('--mouse-y', `${y}px`);
+            }
+        });
+
+        cards.forEach(card => {
+            card.addEventListener('mousemove', (e) => {
+                const rect = card.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+
+                const centerX = rect.width / 2;
+                const centerY = rect.height / 2;
+
+                const rotateX = ((y - centerY) / centerY) * -5;
+                const rotateY = ((x - centerX) / centerX) * 5;
+
+                card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.02, 1.02, 1.02)`;
+            });
+
+            card.addEventListener('mouseleave', () => {
+                card.style.transform = 'perspective(1000px) rotateX(0) rotateY(0) scale3d(1, 1, 1)';
+            });
+        });
+
+        // --- 3. Interactive Particle Background (Canvas) ---
+        const canvas = document.getElementById('bg-canvas');
+        const ctx = canvas.getContext('2d');
+        let particles = [];
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        class Particle {
+            constructor() {
+                this.x = Math.random() * canvas.width;
+                this.y = Math.random() * canvas.height;
+                this.size = Math.random() * 2 + 0.5;
+                this.speedX = Math.random() * 0.5 - 0.25;
+                this.speedY = Math.random() * 0.5 - 0.25;
+                this.color = Math.random() > 0.5 ? 'rgba(239, 68, 68, ' : 'rgba(59, 130, 246, '; // Red or Blue
+            }
+
+            update() {
+                this.x += this.speedX;
+                this.y += this.speedY;
+
+                if (this.x > canvas.width) this.x = 0;
+                if (this.x < 0) this.x = canvas.width;
+                if (this.y > canvas.height) this.y = 0;
+                if (this.y < 0) this.y = canvas.height;
+            }
+
+            draw() {
+                ctx.fillStyle = this.color + '0.5)';
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        function initParticles() {
+            particles = [];
+            const numberOfParticles = (canvas.width * canvas.height) / 15000;
+            for (let i = 0; i < numberOfParticles; i++) {
+                particles.push(new Particle());
+            }
+        }
+        initParticles();
+
+        // Mouse interaction
+        let mouse = { x: null, y: null };
+        window.addEventListener('mousemove', (e) => {
+            mouse.x = e.x;
+            mouse.y = e.y;
+
+            // Also move blobs
+            const blobs = document.querySelectorAll('.blob');
+            const x = e.clientX / window.innerWidth;
+            const y = e.clientY / window.innerHeight;
+            blobs[0].style.transform = `translate(${x * 30}px, ${y * 30}px)`;
+            blobs[1].style.transform = `translate(${x * -30}px, ${y * -30}px)`;
+        });
+
+        function animateParticles() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            for (let i = 0; i < particles.length; i++) {
+                particles[i].update();
+                particles[i].draw();
+
+                // Connect particles
+                for (let j = i; j < particles.length; j++) {
+                    const dx = particles[i].x - particles[j].x;
+                    const dy = particles[i].y - particles[j].y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+
+                    if (distance < 100) {
+                        ctx.beginPath();
+                        ctx.strokeStyle = `rgba(255, 255, 255, ${0.1 - distance / 1000})`;
+                        ctx.lineWidth = 0.5;
+                        ctx.moveTo(particles[i].x, particles[i].y);
+                        ctx.lineTo(particles[j].x, particles[j].y);
+                        ctx.stroke();
+                    }
+                }
+
+                // Connect to mouse
+                if (mouse.x != null) {
+                    const dx = particles[i].x - mouse.x;
+                    const dy = particles[i].y - mouse.y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+
+                    if (distance < 150) {
+                        ctx.beginPath();
+                        ctx.strokeStyle = `rgba(255, 255, 255, ${0.2 - distance / 750})`;
+                        ctx.lineWidth = 0.8;
+                        ctx.moveTo(particles[i].x, particles[i].y);
+                        ctx.lineTo(mouse.x, mouse.y);
+                        ctx.stroke();
+                    }
+                }
+            }
+            requestAnimationFrame(animateParticles);
+        }
+        animateParticles();
+
+        // --- 4. Header Parallax ---
+        document.addEventListener('mousemove', (e) => {
+            const header = document.getElementById('main-header');
+            const x = (window.innerWidth / 2 - e.clientX) / 60;
+            const y = (window.innerHeight / 2 - e.clientY) / 60;
+
+            header.style.transform = `rotateY(${x}deg) rotateX(${y}deg)`;
+        });
+
     </script>
 </body>
-</html> 
+
+</html>
