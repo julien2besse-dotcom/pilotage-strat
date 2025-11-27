@@ -41,6 +41,7 @@
             overflow-x: hidden;
             min-height: 100vh;
             perspective: 2000px;
+            transition: background-color 0.5s ease;
         }
 
         /* Canvas Background */
@@ -67,7 +68,7 @@
             opacity: 0.4;
         }
 
-        /* Deep Background Blobs (Behind Canvas) */
+        /* Deep Background Blobs */
         .ambient-light {
             position: fixed;
             top: 0;
@@ -106,11 +107,11 @@
         /* Layout */
         .container {
             max-width: 1200px;
-            /* Slightly tighter container for the 2x2 grid */
             margin: 0 auto;
             padding: 40px 20px;
             position: relative;
             z-index: 1;
+            transition: filter 0.5s ease, opacity 0.5s ease;
         }
 
         /* Header */
@@ -127,7 +128,7 @@
             border: 1px solid rgba(255, 255, 255, 0.05);
             box-shadow: 0 20px 50px rgba(0, 0, 0, 0.2);
             transform-style: preserve-3d;
-            transition: transform 0.1s;
+            transition: transform 0.1s, opacity 0.5s;
         }
 
         .header-content h1 {
@@ -195,6 +196,7 @@
             position: sticky;
             top: 30px;
             z-index: 100;
+            transition: opacity 0.5s;
         }
 
         .nav-pills {
@@ -229,21 +231,21 @@
             box-shadow: 0 0 30px var(--primary-glow);
         }
 
-        /* Spotlight Grid - FIXED LAYOUT */
+        /* Grid */
         .bento-grid {
             display: grid;
-            /* Force 2 columns on desktop to avoid holes */
             grid-template-columns: repeat(2, 1fr);
             gap: 30px;
             position: relative;
+            transition: transform 0.5s ease;
         }
 
-        /* 3D Tilt Card */
+        /* Card Styles */
         .tilt-card {
             background: var(--bg-card);
             border-radius: var(--card-radius);
             position: relative;
-            transition: transform 0.1s ease;
+            transition: all 0.5s cubic-bezier(0.25, 1, 0.5, 1);
             transform-style: preserve-3d;
             height: 100%;
             padding: 1px;
@@ -256,9 +258,7 @@
             inset: 0;
             border-radius: var(--card-radius);
             padding: 2px;
-            background: radial-gradient(800px circle at var(--mouse-x) var(--mouse-y),
-                    rgba(255, 255, 255, 0.4),
-                    transparent 40%);
+            background: radial-gradient(800px circle at var(--mouse-x) var(--mouse-y), rgba(255, 255, 255, 0.4), transparent 40%);
             -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
             -webkit-mask-composite: xor;
             mask-composite: exclude;
@@ -274,9 +274,7 @@
             position: relative;
             z-index: 1;
             overflow: hidden;
-            background: radial-gradient(800px circle at var(--mouse-x) var(--mouse-y),
-                    rgba(255, 255, 255, 0.06),
-                    transparent 40%);
+            background: radial-gradient(800px circle at var(--mouse-x) var(--mouse-y), rgba(255, 255, 255, 0.06), transparent 40%);
         }
 
         .card-icon {
@@ -327,8 +325,17 @@
             font-size: 0.95rem;
             color: var(--text-muted);
             font-style: italic;
-            margin-bottom: 15px;
+            margin-bottom: 10px;
             line-height: 1.6;
+        }
+
+        .explanation {
+            font-size: 0.9rem;
+            color: rgba(255, 255, 255, 0.6);
+            margin-bottom: 15px;
+            padding-left: 10px;
+            border-left: 2px solid var(--primary);
+            font-weight: 400;
         }
 
         .kpi-badge {
@@ -556,11 +563,128 @@
             }
         }
 
-        @media (max-width: 1024px) {
+        /* --- PRESENTATION MODE STYLES --- */
+        body.presentation-mode {
+            overflow: hidden;
+            perspective: none !important;
+        }
 
-            /* Keep 2 columns on tablet if possible, or switch to 1 if too narrow */
-            .bento-grid {
-                grid-template-columns: repeat(2, 1fr);
+        /* Dim everything when in presentation mode */
+        body.presentation-mode header,
+        body.presentation-mode .nav-wrapper,
+        body.presentation-mode footer,
+        body.presentation-mode .tilt-card {
+            opacity: 0.1;
+            filter: blur(5px);
+            pointer-events: none;
+            transition: all 0.5s ease;
+        }
+
+        /* The Focused Card - Conteneur principal */
+        body.presentation-mode .tilt-card.focused {
+            opacity: 1 !important;
+            filter: blur(0) !important;
+            pointer-events: auto !important;
+            position: fixed !important;
+            top: 5vh !important;
+            left: 50% !important;
+            transform: translateX(-50%) !important;
+            z-index: 9999;
+            width: 85vw !important;
+            max-width: 1100px !important;
+            height: 90vh !important;
+            box-shadow: 0 0 100px rgba(0, 0, 0, 0.8);
+            transition: opacity 0.4s ease, filter 0.4s ease;
+            overflow: visible !important;
+            display: block !important;
+        }
+
+        /* Le contenu scrollable de la carte */
+        body.presentation-mode .tilt-card.focused .card-content {
+            width: 100% !important;
+            height: 90vh !important;
+            overflow-y: scroll !important;
+            overflow-x: hidden !important;
+            padding: 50px !important;
+            padding-right: 60px !important;
+            background: rgba(20, 20, 22, 0.98) !important;
+            border-radius: var(--card-radius) !important;
+            box-sizing: border-box !important;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        /* Forcer l'affichage de la scrollbar pour Firefox */
+        body.presentation-mode .tilt-card.focused .card-content {
+            scrollbar-width: thin;
+            scrollbar-color: #ef4444 rgba(255, 255, 255, 0.15);
+        }
+
+        /* Forcer l'affichage de la scrollbar pour Chrome/Safari/Edge */
+        body.presentation-mode .tilt-card.focused .card-content::-webkit-scrollbar {
+            width: 16px !important;
+            height: 16px !important;
+            -webkit-appearance: none;
+        }
+
+        body.presentation-mode .tilt-card.focused .card-content::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.12) !important;
+            border-radius: 8px;
+            margin: 10px 0;
+        }
+
+        body.presentation-mode .tilt-card.focused .card-content::-webkit-scrollbar-thumb {
+            background-color: #ef4444 !important;
+            border-radius: 8px;
+            border: 3px solid rgba(20, 20, 22, 0.98);
+            min-height: 40px;
+        }
+
+        body.presentation-mode .tilt-card.focused .card-content::-webkit-scrollbar-thumb:hover {
+            background-color: #dc2626 !important;
+        }
+
+        body.presentation-mode .tilt-card.focused .card-content::-webkit-scrollbar-thumb:active {
+            background-color: #b91c1c !important;
+        }
+
+        /* Masquer le before de la carte en mode présentation */
+        body.presentation-mode .tilt-card.focused::before {
+            display: none;
+        }
+
+        /* Controls Guide */
+        .controls-guide {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(10px);
+            padding: 15px 25px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 0.9rem;
+            display: flex;
+            gap: 20px;
+            z-index: 2000;
+            opacity: 0;
+            animation: fadeIn 1s 2s forwards;
+            /* Delay fade in */
+        }
+
+        .key {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 2px 8px;
+            border-radius: 6px;
+            font-family: monospace;
+            font-weight: bold;
+            color: white;
+            margin-right: 5px;
+        }
+
+        @keyframes fadeIn {
+            to {
+                opacity: 1;
             }
         }
 
@@ -590,9 +714,14 @@
                 flex-direction: column;
             }
 
-            /* Stack on mobile */
             .bento-grid {
                 grid-template-columns: 1fr;
+            }
+
+            /* Disable presentation mode on mobile */
+            body.presentation-mode .tilt-card.focused {
+                width: 95vw;
+                transform: translate(-50%, -50%) scale(1) !important;
             }
         }
     </style>
@@ -606,6 +735,13 @@
     <div class="ambient-light">
         <div class="blob blob-1"></div>
         <div class="blob blob-2"></div>
+    </div>
+
+    <!-- Controls Guide -->
+    <div class="controls-guide">
+        <div><span class="key">➡️</span> Suivant</div>
+        <div><span class="key">⬅️</span> Précédent</div>
+        <div><span class="key">ESC</span> Quitter</div>
     </div>
 
     <div class="container">
@@ -639,7 +775,7 @@
                 <div class="bento-grid" id="cards-container">
 
                     <!-- Card 1 -->
-                    <div class="tilt-card">
+                    <div class="tilt-card" data-index="0">
                         <div class="card-content">
                             <div class="card-icon">🏭</div>
                             <h2>Améliorer les processus industriels</h2>
@@ -648,25 +784,31 @@
                                 <div class="sub-title">Fiabiliser la planification (OTD Interne)</div>
                                 <div class="quote">"Éviter les stocks inutiles et respecter les mises à disposition."
                                 </div>
+                                <div class="explanation">Ex : Si on prévoit 500 paires lundi, elles doivent être prêtes
+                                    lundi soir.</div>
                                 <div class="kpi-badge">% skis alpins fabriqués "On Time" <span>KPI #22</span></div>
                             </div>
 
                             <div class="sub-item">
                                 <div class="sub-title">Réduire les coûts de non-qualité</div>
                                 <div class="quote">"Réduire les coûts directs et le gaspillage de matières."</div>
+                                <div class="explanation">Ex : Chaque ski jeté coûte de l'argent. Objectif zéro déchet.
+                                </div>
                                 <div class="kpi-badge">Taux skis rebutés sortie moulage <span>KPI #76</span></div>
                             </div>
 
                             <div class="sub-item">
                                 <div class="sub-title">Optimiser les ressources humaines</div>
                                 <div class="quote">"Éviter les opérateurs inoccupés et l'intérim coûteux."</div>
+                                <div class="explanation">Ex : S'assurer que chaque ouvrier a du travail toute la
+                                    journée.</div>
                                 <div class="kpi-badge">Taux de rendement main-d'œuvre <span>Nouveau</span></div>
                             </div>
                         </div>
                     </div>
 
                     <!-- Card 2 -->
-                    <div class="tilt-card">
+                    <div class="tilt-card" data-index="1">
                         <div class="card-content">
                             <div class="card-icon">📦</div>
                             <h2>Améliorer les processus logistiques</h2>
@@ -674,25 +816,31 @@
                             <div class="sub-item">
                                 <div class="sub-title">Rationaliser les flux d'expédition</div>
                                 <div class="quote">"Passer de 6-7 livraisons à 2 maximum par commande."</div>
+                                <div class="explanation">Ex : Grouper 5 petits colis en 1 gros envoi pour économiser le
+                                    transport.</div>
                                 <div class="kpi-badge">% livraisons en 1 ou 2 fois <span>KPI #10</span></div>
                             </div>
 
                             <div class="sub-item">
                                 <div class="sub-title">Garantir la conformité</div>
                                 <div class="quote">"Réduire les erreurs générant retours et avoirs."</div>
+                                <div class="explanation">Ex : Si le client commande du rouge, on n'envoie pas du bleu.
+                                </div>
                                 <div class="kpi-badge">% livraisons conformes <span>KPI #7</span></div>
                             </div>
 
                             <div class="sub-item">
                                 <div class="sub-title">Optimiser la rotation des stocks</div>
                                 <div class="quote">"Réduire le BFR et les stocks résiduels."</div>
+                                <div class="explanation">Ex : Ne pas garder des skis en stock 6 mois. Produire et
+                                    expédier vite.</div>
                                 <div class="kpi-badge">Taux rotation stocks PF <span>Nouveau</span></div>
                             </div>
                         </div>
                     </div>
 
                     <!-- Card 3 -->
-                    <div class="tilt-card">
+                    <div class="tilt-card" data-index="2">
                         <div class="card-content">
                             <div class="card-icon">🚀</div>
                             <h2>Améliorer la conception</h2>
@@ -700,12 +848,16 @@
                             <div class="sub-item">
                                 <div class="sub-title">Respecter le Time-to-Market</div>
                                 <div class="quote">"La saisonnalité ne pardonne pas les retards."</div>
+                                <div class="explanation">Ex : Les skis de l'hiver prochain doivent être en magasin en
+                                    septembre.</div>
                                 <div class="kpi-badge">% projets R&D dans délai <span>KPI #15</span></div>
                             </div>
 
                             <div class="sub-item">
                                 <div class="sub-title">Rationaliser la gamme technique</div>
                                 <div class="quote">"Réduire le nombre de structures pour allonger les séries."</div>
+                                <div class="explanation">Ex : Utiliser le même moule pour plusieurs modèles de skis.
+                                </div>
                                 <div class="kpi-badge">Nombre structures skis actives <span>KPI #57</span></div>
                             </div>
 
@@ -713,13 +865,15 @@
                                 <div class="sub-title">Sécuriser l'aboutissement</div>
                                 <div class="quote">"Éviter le gaspillage de ressources R&D sur des projets avortés."
                                 </div>
+                                <div class="explanation">Ex : Ne pas passer 6 mois sur un ski qui ne sera jamais vendu.
+                                </div>
                                 <div class="kpi-badge">% projets R&D aboutissant <span>KPI #14</span></div>
                             </div>
                         </div>
                     </div>
 
                     <!-- Card 4 -->
-                    <div class="tilt-card">
+                    <div class="tilt-card" data-index="3">
                         <div class="card-content">
                             <div class="card-icon">💻</div>
                             <h2>Optimiser les SI</h2>
@@ -727,18 +881,22 @@
                             <div class="sub-item">
                                 <div class="sub-title">Déploiement nouvel ERP</div>
                                 <div class="quote">"Projet critique groupe, respect impératif du planning."</div>
+                                <div class="explanation">Ex : Installer le nouveau logiciel sans bloquer l'usine.</div>
                                 <div class="kpi-badge">Jours retard implémentation SI <span>KPI #44</span></div>
                             </div>
 
                             <div class="sub-item">
                                 <div class="sub-title">Limiter la dette technique</div>
                                 <div class="quote">"Garder un système standard et maintenable."</div>
+                                <div class="explanation">Ex : Éviter le "bricolage" informatique pour faciliter les
+                                    mises à jour.</div>
                                 <div class="kpi-badge">Jours/homme dev. spécifiques <span>KPI #45</span></div>
                             </div>
 
                             <div class="sub-item">
                                 <div class="sub-title">Information financière</div>
                                 <div class="quote">"Reporting rapide et fiable nécessaire pour la consolidation."</div>
+                                <div class="explanation">Ex : Sortir les chiffres le 3 du mois, pas le 15.</div>
                                 <div class="kpi-badge">Délai clôture mensuelle <span>Nouveau</span></div>
                             </div>
                         </div>
@@ -851,6 +1009,9 @@
         const cards = document.querySelectorAll('.tilt-card');
 
         cardsContainer.addEventListener('mousemove', e => {
+            // Disable spotlight in presentation mode
+            if (document.body.classList.contains('presentation-mode')) return;
+
             for (const card of cards) {
                 const rect = card.getBoundingClientRect();
                 const x = e.clientX - rect.left;
@@ -863,6 +1024,9 @@
 
         cards.forEach(card => {
             card.addEventListener('mousemove', (e) => {
+                // Disable tilt in presentation mode
+                if (document.body.classList.contains('presentation-mode')) return;
+
                 const rect = card.getBoundingClientRect();
                 const x = e.clientX - rect.left;
                 const y = e.clientY - rect.top;
@@ -877,7 +1041,14 @@
             });
 
             card.addEventListener('mouseleave', () => {
+                if (document.body.classList.contains('presentation-mode')) return;
                 card.style.transform = 'perspective(1000px) rotateX(0) rotateY(0) scale3d(1, 1, 1)';
+            });
+
+            // Click to focus
+            card.addEventListener('click', () => {
+                const index = parseInt(card.getAttribute('data-index'));
+                enterPresentationMode(index);
             });
         });
 
@@ -900,7 +1071,7 @@
                 this.size = Math.random() * 2 + 0.5;
                 this.speedX = Math.random() * 0.5 - 0.25;
                 this.speedY = Math.random() * 0.5 - 0.25;
-                this.color = Math.random() > 0.5 ? 'rgba(239, 68, 68, ' : 'rgba(59, 130, 246, '; // Red or Blue
+                this.color = Math.random() > 0.5 ? 'rgba(239, 68, 68, ' : 'rgba(59, 130, 246, ';
             }
 
             update() {
@@ -930,13 +1101,11 @@
         }
         initParticles();
 
-        // Mouse interaction
         let mouse = { x: null, y: null };
         window.addEventListener('mousemove', (e) => {
             mouse.x = e.x;
             mouse.y = e.y;
 
-            // Also move blobs
             const blobs = document.querySelectorAll('.blob');
             const x = e.clientX / window.innerWidth;
             const y = e.clientY / window.innerHeight;
@@ -951,7 +1120,6 @@
                 particles[i].update();
                 particles[i].draw();
 
-                // Connect particles
                 for (let j = i; j < particles.length; j++) {
                     const dx = particles[i].x - particles[j].x;
                     const dy = particles[i].y - particles[j].y;
@@ -967,7 +1135,6 @@
                     }
                 }
 
-                // Connect to mouse
                 if (mouse.x != null) {
                     const dx = particles[i].x - mouse.x;
                     const dy = particles[i].y - mouse.y;
@@ -994,6 +1161,88 @@
             const y = (window.innerHeight / 2 - e.clientY) / 60;
 
             header.style.transform = `rotateY(${x}deg) rotateX(${y}deg)`;
+        });
+
+        // --- 5. PRESENTATION MODE LOGIC (REFAIT COMPLETEMENT) ---
+        let presentationIndex = -1;
+        const totalCards = 4;
+        let isAnimating = false;
+
+        function enterPresentationMode(index) {
+            if (isAnimating) return;
+            if (index < 0 || index >= totalCards) return;
+
+            // Si on change de carte en mode présentation
+            if (presentationIndex !== -1) {
+                cards[presentationIndex].classList.remove('focused');
+            }
+
+            // Activer le mode présentation
+            document.body.classList.add('presentation-mode');
+            presentationIndex = index;
+
+            // Marquer la carte comme focalisée
+            const card = cards[index];
+            card.classList.add('focused');
+
+            // Scroll vers le haut pour une meilleure expérience
+            card.querySelector('.card-content').scrollTop = 0;
+        }
+
+        function exitPresentationMode() {
+            if (presentationIndex === -1) return;
+
+            // Retirer le focus de la carte active
+            if (presentationIndex >= 0 && presentationIndex < totalCards) {
+                cards[presentationIndex].classList.remove('focused');
+            }
+
+            // Désactiver le mode présentation
+            document.body.classList.remove('presentation-mode');
+            presentationIndex = -1;
+        }
+
+        function nextCard() {
+            if (presentationIndex === -1) {
+                // Pas encore en mode présentation, démarrer avec la première carte
+                enterPresentationMode(0);
+            } else if (presentationIndex < totalCards - 1) {
+                // Carte suivante
+                enterPresentationMode(presentationIndex + 1);
+            } else {
+                // Dernière carte, boucler vers la première
+                enterPresentationMode(0);
+            }
+        }
+
+        function previousCard() {
+            if (presentationIndex === -1) {
+                // Pas en mode présentation, ne rien faire
+                return;
+            } else if (presentationIndex > 0) {
+                // Carte précédente
+                enterPresentationMode(presentationIndex - 1);
+            } else {
+                // Première carte, sortir du mode présentation
+                exitPresentationMode();
+            }
+        }
+
+        // Contrôles clavier
+        document.addEventListener('keydown', (e) => {
+            // Vérifier qu'on est sur la section KPI
+            if (document.getElementById('kpi').classList.contains('hidden')) return;
+
+            if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+                e.preventDefault();
+                nextCard();
+            } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+                e.preventDefault();
+                previousCard();
+            } else if (e.key === 'Escape') {
+                e.preventDefault();
+                exitPresentationMode();
+            }
         });
 
     </script>
